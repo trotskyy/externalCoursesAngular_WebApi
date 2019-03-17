@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AwesomeLists.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     [ApiController]
     public class TaskListController : ControllerBase
     {
@@ -17,8 +17,25 @@ namespace AwesomeLists.Controllers
             return Ok(taskLists);
         }
 
+        [HttpGet("summary")]
+        public async Task<ActionResult<TaskListSummary[]>> GetSummaryAsync()
+        {
+            var taskLists = Data.TaskLists.Select(list =>
+            {
+                return new TaskListSummary()
+                {
+                    TaskListId = list.TaskListId,
+                    Name = list.Name,
+                    Total = list.Tasks.Count,
+                    ToDoTotal = list.Tasks.Where(t => t.Status == Status.ToDo).ToArray().Length,
+                    InProgressTotal = list.Tasks.Where(t => t.Status == Status.InProgress).ToArray().Length,
+                    DoneTotal = list.Tasks.Where(t => t.Status == Status.Done).ToArray().Length,
+                };
+            });
+            return Ok(taskLists);
+        }
 
-        [HttpGet("/{taskListId}")]
+        [HttpGet("{taskListId}")]
         public async Task<ActionResult<TaskList>> GetByIdAsync(string taskListId)
         {
             try
@@ -40,7 +57,7 @@ namespace AwesomeLists.Controllers
             return Ok(taskList);
         }
 
-        [HttpPut("/{taskListId}")]
+        [HttpPut("{taskListId}")]
         public async Task<ActionResult<TaskList>> UpdateAsync(string taskListId, [FromBody] TaskList taskList)
         {
             var existingLists = Data.TaskLists.Where(list => list.TaskListId == taskListId).ToArray();
@@ -56,7 +73,7 @@ namespace AwesomeLists.Controllers
             return Ok(taskList);
         }
 
-        [HttpDelete("/{taskListId}")]
+        [HttpDelete("{taskListId}")]
         public async Task<ActionResult> DeleteAsync(string taskListId)
         {
             var existingLists = Data.TaskLists.Where(list => list.TaskListId == taskListId).ToArray();
