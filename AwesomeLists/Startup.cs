@@ -14,6 +14,11 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using AwesomeLists.Services.Auth;
+using Microsoft.EntityFrameworkCore;
 
 namespace AwesomeLists
 {
@@ -29,6 +34,17 @@ namespace AwesomeLists
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContext<AuthDbContext>(options =>
+            {
+                options.UseSqlServer(Configuration.GetConnectionString("AuthDb"));
+            });
+
+            services.AddIdentity<AuthUser, IdentityRole>()
+                .AddEntityFrameworkStores<AuthDbContext>()
+                .AddDefaultTokenProviders();
+
+            JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -49,7 +65,7 @@ namespace AwesomeLists
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, AuthDbContext authDbContext)
         {
             if (env.IsDevelopment())
             {
@@ -66,9 +82,12 @@ namespace AwesomeLists
                 builder.AllowAnyMethod();
                 builder.AllowCredentials();
             });
+
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseMvc();
+
+            authDbContext.Database.EnsureCreated();
         }
     }
 }
