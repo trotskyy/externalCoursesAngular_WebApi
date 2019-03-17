@@ -67,7 +67,7 @@ namespace AwesomeLists.Services
              new TaskList
              {
                     TaskListId = "2",
-                    Name = "University Tasks",
+                    Name = "Epam Tasks",
                     Tasks = new List<Task>
                     {
                         new Task()
