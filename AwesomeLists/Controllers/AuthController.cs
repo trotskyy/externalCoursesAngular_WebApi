@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using AwesomeLists.Data.Entities;
 using AwesomeLists.Services.Auth;
 using AwesomeLists.Services.User;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -36,12 +37,14 @@ namespace AwesomeLists.Controllers
         }
 
         [HttpPost("sign-in")]
+        [AllowAnonymous]
         public async Task<IActionResult> SignInAsync([FromBody] SignInModel signInModel)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+
 
             Microsoft.AspNetCore.Identity.SignInResult result =
                 await _signInManager.PasswordSignInAsync(signInModel.Login, signInModel.Password, false, false);
@@ -71,11 +74,11 @@ namespace AwesomeLists.Controllers
                 UserName = signUpModel.SignInModel.Login
             };
 
-            var result = await _userManager.CreateAsync(authUser);
+            var result = await _userManager.CreateAsync(authUser, signUpModel.SignInModel.Password);
 
             if (!result.Succeeded)
             {
-                return BadRequest(new { message = "user with such login already exists" });
+                return BadRequest(result.Errors);
             }
 
             await _signInManager.SignInAsync(authUser, false);

@@ -10,7 +10,7 @@ namespace AwesomeLists.Services.TaskList
         [Required]
         public string Name { get; set; }
 
-        [Range(1, int.MaxValue)]
+        [Required]
         public string UserId { get; set; }
 
         public TaskDto[] Tasks { get; set; }

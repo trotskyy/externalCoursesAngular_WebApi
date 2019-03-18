@@ -20,7 +20,9 @@ namespace AwesomeLists.Services.TaskList
                 Id = taskList.Id,
                 Name = taskList.Name,
                 UserId = taskList.UserId,
-                Tasks = taskList.Tasks.Select(task => _taskMapper.MapToDto(task)).ToArray()
+                Tasks = taskList.Tasks != null
+                    ? taskList.Tasks.Select(task => _taskMapper.MapToDto(task)).ToArray()
+                    : null
             };
         }
 
@@ -31,7 +33,9 @@ namespace AwesomeLists.Services.TaskList
                 Id = dto.Id,
                 Name = dto.Name,
                 UserId = dto.UserId,
-                Tasks = dto.Tasks.Select(task => _taskMapper.MapToEntity(task)).ToArray()
+                Tasks = dto.Tasks != null
+                    ? dto.Tasks.Select(task => _taskMapper.MapToEntity(task)).ToArray()
+                    : null
             };
         }
     }
