@@ -106,7 +106,7 @@ namespace AwesomeLists.Controllers
             var claims = new List<Claim>
             {
                 // https://openid.net/specs/openid-connect-core-1_0.html#IDToken
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 //new Claim(JwtRegisteredClaimNames.Iss, _configuration["Jwt:Issuer"]),
                 //new Claim(JwtRegisteredClaimNames.Aud, _configuration["Jwt:Issuer"]),
                 new Claim(JwtRegisteredClaimNames.Iat, unixNowSeconds.ToString()),
