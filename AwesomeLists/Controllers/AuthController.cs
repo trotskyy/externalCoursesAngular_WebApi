@@ -5,13 +5,13 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using AwesomeLists.Data.Entities;
 using AwesomeLists.Services.Auth;
-using Microsoft.AspNetCore.Http;
+using AwesomeLists.Services.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-// using AuthUser = Microsoft.AspNetCore.Identity.IdentityUser; //<System.Guid>;
 
 namespace AwesomeLists.Controllers
 {
@@ -22,18 +22,21 @@ namespace AwesomeLists.Controllers
         private readonly SignInManager<AuthUser> _signInManager;
         private readonly UserManager<AuthUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly IUserService _appUserService;
 
         public AuthController(SignInManager<AuthUser> signInManager,
             UserManager<AuthUser> userManager,
+            IUserService appUserService,
             IConfiguration configuration)
         {
             _signInManager = signInManager ?? throw new ArgumentNullException(nameof(signInManager));
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _appUserService = appUserService ?? throw new ArgumentNullException(nameof(appUserService));
         }
 
         [HttpPost("sign-in")]
-        public async Task<IActionResult> SignInAsync([FromBody] SignInModel loginModel)
+        public async Task<IActionResult> SignInAsync([FromBody] SignInModel signInModel)
         {
             if (!ModelState.IsValid)
             {
@@ -41,21 +44,22 @@ namespace AwesomeLists.Controllers
             }
 
             Microsoft.AspNetCore.Identity.SignInResult result =
-                await _signInManager.PasswordSignInAsync(loginModel.Login, loginModel.Password, false, false);
+                await _signInManager.PasswordSignInAsync(signInModel.Login, signInModel.Password, false, false);
 
             if (!result.Succeeded)
             {
                 return Unauthorized();
             }
 
-            AuthUser authUser = _userManager.Users.FirstOrDefault(user => user.UserName == loginModel.Login);
+            AuthUser authUser = _userManager.Users.FirstOrDefault(user => user.UserName == signInModel.Login);
+            User appUser = await _appUserService.GetByIdAsync(authUser.Id);
             string token = GenerateJwtTokenString(authUser);
 
-            return Ok(new { user = "domain user should be here", token });
+            return Ok(new { user = appUser, token });
         }
 
         [HttpPost("sign-up")]
-        public async Task<IActionResult> SignUp([FromBody] SignUpModel loginModel)
+        public async Task<IActionResult> SignUp([FromBody] SignUpModel signUpModel)
         {
             if (!ModelState.IsValid)
             {
@@ -64,7 +68,7 @@ namespace AwesomeLists.Controllers
 
             var authUser = new AuthUser
             {
-                UserName = loginModel.SignInModel.Login
+                UserName = signUpModel.SignInModel.Login
             };
 
             var result = await _userManager.CreateAsync(authUser);
@@ -75,9 +79,20 @@ namespace AwesomeLists.Controllers
             }
 
             await _signInManager.SignInAsync(authUser, false);
+            string authUserId = _userManager.Users.FirstOrDefault(user => user.UserName == authUser.UserName).Id;
+
+            var appUser = new User
+            {
+                Id = authUserId,
+                FirstName = signUpModel.FirstName,
+                LastName = signUpModel.LastName
+            };
+
+            await _appUserService.AddAsync(appUser);
+
             string token = GenerateJwtTokenString(authUser);
 
-            return Ok(new { user = "domain user should be here", token });
+            return Ok(new { user = appUser, token });
         }
 
         private string GenerateJwtTokenString(AuthUser user)

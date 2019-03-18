@@ -19,6 +19,8 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using System.IdentityModel.Tokens.Jwt;
 using AwesomeLists.Services.Auth;
 using Microsoft.EntityFrameworkCore;
+using AwesomeLists.Configuration;
+using AwesomeLIsts.Data;
 
 namespace AwesomeLists
 {
@@ -62,10 +64,12 @@ namespace AwesomeLists
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.AddCors();
+
+            services.RegisterDependencies(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, AuthDbContext authDbContext)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, AuthDbContext authDbContext, AppDbContext appDbContext)
         {
             if (env.IsDevelopment())
             {
@@ -88,6 +92,7 @@ namespace AwesomeLists
             app.UseMvc();
 
             authDbContext.Database.EnsureCreated();
+            appDbContext.Database.EnsureCreated();
         }
     }
 }
