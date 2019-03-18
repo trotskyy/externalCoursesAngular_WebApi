@@ -1,4 +1,4 @@
-﻿namespace AwesomeLists.Services
+﻿namespace AwesomeLists.Data.Entities
 {
     public enum Status
     {

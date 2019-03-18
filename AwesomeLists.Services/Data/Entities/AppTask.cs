@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace AwesomeLists.Services
+namespace AwesomeLists.Data.Entities
 {
-    public class Task
+    public class AppTask
     {
-        public string TaskId { get; set; }
+        public int Id { get; set; }
 
-        public string TaskListId { get; set; }
+        public int TaskListId { get; set; }
+        public TaskList TaskList { get; set; }
 
         public string Name { get; set; }
 

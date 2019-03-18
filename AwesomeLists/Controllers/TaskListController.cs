@@ -1,90 +1,111 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
-using AwesomeLists.Services;
+using AwesomeLists.Data.Entities;
+using AwesomeLists.Services.TaskList;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AwesomeLists.Controllers
 {
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     [ApiController]
     public class TaskListController : ControllerBase
     {
-        [HttpGet]
-        public async Task<ActionResult<TaskList[]>> GetAllAsync()
+        private readonly ITaskListService _taskListService;
+        private readonly ITaskListMapper _mapper;
+
+        public TaskListController(ITaskListService taskListService, ITaskListMapper mapper)
         {
-            var taskLists = Data.TaskLists;
-            return Ok(taskLists);
+            _taskListService = taskListService ?? throw new ArgumentNullException(nameof(taskListService));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        [HttpGet("summary")]
-        public async Task<ActionResult<TaskListSummary[]>> GetSummaryAsync()
+        [HttpGet("summary/{userId}")]
+        public async Task<ActionResult<TaskListSummary[]>> GetSummaryAsync([Required]string userId)
         {
-            var taskLists = Data.TaskLists.Select(list =>
+            if (!ModelState.IsValid)
             {
-                return new TaskListSummary()
-                {
-                    TaskListId = list.TaskListId,
-                    Name = list.Name,
-                    Total = list.Tasks.Count,
-                    ToDoTotal = list.Tasks.Where(t => t.Status == Status.ToDo).ToArray().Length,
-                    InProgressTotal = list.Tasks.Where(t => t.Status == Status.InProgress).ToArray().Length,
-                    DoneTotal = list.Tasks.Where(t => t.Status == Status.Done).ToArray().Length,
-                };
-            });
-            return Ok(taskLists);
-        }
-
-        [HttpGet("{taskListId}")]
-        public async Task<ActionResult<TaskList>> GetByIdAsync(string taskListId)
-        {
-            try
-            {
-                var taskList = Data.TaskLists.First(list => list.TaskListId == taskListId);
-                return Ok(taskList);
+                return BadRequest(ModelState);
             }
-            catch (Exception e)
+
+            List<TaskListSummary> summary = await _taskListService.GetTaskListsSummaryAsync(userId);
+
+            if (summary == null || !summary.Any())
             {
                 return NotFound();
             }
+
+            return Ok(summary);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<TaskListDto>> GetByIdAsync([Range(1, int.MaxValue)]int id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            TaskList taskList = await _taskListService.GetByIdAsync(id);
+
+            if (taskList == null)
+            {
+                return NotFound();
+            }
+
+            TaskListDto dto = _mapper.MapToDto(taskList);
+
+            return Ok(dto);
         }
 
         [HttpPost]
-        public async Task<ActionResult<TaskList>> CreateAsync([FromBody]TaskList taskList)
+        public async Task<ActionResult<TaskList>> CreateAsync([FromBody][Required]TaskListDto taskList)
         {
-            taskList.TaskListId = new Guid().ToString();
-            Data.TaskLists.Add(taskList);
-            return Ok(taskList);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            TaskList entity = _mapper.MapToEntity(taskList);
+            TaskList addedList =  await _taskListService.AddAsync(entity);
+            TaskListDto addedListDto = _mapper.MapToDto(addedList);
+
+            return CreatedAtAction(nameof(GetByIdAsync), new { id = addedListDto.Id }, addedListDto);
         }
 
-        [HttpPut("{taskListId}")]
-        public async Task<ActionResult<TaskList>> UpdateAsync(string taskListId, [FromBody] TaskList taskList)
+        [HttpPut("{id}")]
+        public async Task<ActionResult> UpdateAsync([Range(1, int.MaxValue)]int id, [FromBody] TaskListUpdateDto updateDto)
         {
-            var existingLists = Data.TaskLists.Where(list => list.TaskListId == taskListId).ToArray();
-            if (existingLists.Length != 1)
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            await _taskListService.UpdateNameAsync(id, updateDto.Name);
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteAsync([Range(1, int.MaxValue)]int id)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            TaskList taskList = await _taskListService.GetByIdAsync(id);
+
+            if (taskList == null)
             {
                 return NotFound();
             }
 
-            taskList.TaskListId = taskListId;
-            Data.TaskLists.Remove(existingLists[0]);
-            Data.TaskLists.Add(taskList);
-            
-            return Ok(taskList);
-        }
+            await _taskListService.DeleteAsync(taskList);
 
-        [HttpDelete("{taskListId}")]
-        public async Task<ActionResult> DeleteAsync(string taskListId)
-        {
-            var existingLists = Data.TaskLists.Where(list => list.TaskListId == taskListId).ToArray();
-            if (existingLists.Length != 1)
-            {
-                return NotFound();
-            }
-
-            Data.TaskLists.Remove(existingLists[0]);
-
-            return Ok();
+            return NoContent();
         }
     }
 }

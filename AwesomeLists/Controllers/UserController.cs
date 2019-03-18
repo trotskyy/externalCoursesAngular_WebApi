@@ -1,12 +1,9 @@
 ﻿using System;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
-using AwesomeLists.Services.Auth;
-using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
+using AwesomeLists.Data.Entities;
+using AwesomeLists.Services.User;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 
 namespace AwesomeLists.Controllers
 {
@@ -14,64 +11,26 @@ namespace AwesomeLists.Controllers
     [ApiController]
     public class UserController : ControllerBase
     {
-        private readonly IConfiguration _configuration;
+        private readonly IUserService _appUserService;
 
-        public UserController(IConfiguration configuration)
+        public UserController(IUserService appUserService)
         {
-            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _appUserService = appUserService ?? throw new ArgumentNullException(nameof(appUserService));
         }
 
-        [Authorize]
-        [HttpGet]
-        public IActionResult Test()
+        [HttpGet("current")]
+        public async Task<IActionResult> GetCurrentUserAsync()
         {
-            return Ok(new { test = "test"});
-        }
+            string currentUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        [HttpPost("login")]
-        public IActionResult Login([FromBody] UserLoginModel userLoginModel)
-        {
-            var user = Authentificate(userLoginModel);
-
-            if (user != null)
+            if (currentUserId == null)
             {
-                string token = GenerateJwt(userLoginModel);
-                return Ok(new { token });
+                return NotFound();
             }
 
-            return Unauthorized();
-        }
+            User currentAppUser = await _appUserService.GetByIdAsync(currentUserId);
 
-        private string GenerateJwt(UserLoginModel userLoginModel)
-        {
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[] {
-                 new Claim(JwtRegisteredClaimNames.Sub, userLoginModel.Login),
-                 //new Claim(JwtRegisteredClaimNames.Email, userInfo.EmailAddress),
-                 //new Claim("DateOfJoing", userInfo.DateOfJoing.ToString("yyyy-MM-dd")),
-                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-                 
-                 // ROLE claim ???
-            };
-
-            var token = new JwtSecurityToken(_configuration["Jwt:Issuer"],
-                 _configuration["Jwt:Issuer"],
-                 claims,
-                 expires: DateTime.Now.AddMinutes(120),
-                 signingCredentials: credentials);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        private UserLoginModel Authentificate(UserLoginModel userLoginModel)
-        {
-            if(userLoginModel.Login == "user1" && userLoginModel.Password == "qwerty")
-            {
-                return userLoginModel;
-            }
-            return null;
+            return Ok(currentAppUser);
         }
     }
 }
