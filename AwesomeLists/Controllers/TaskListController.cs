@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
 using AwesomeLists.Data.Entities;
 using AwesomeLists.Services.TaskList;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AwesomeLists.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/task-list")]
     [ApiController]
+    [Authorize]
     public class TaskListController : ControllerBase
     {
         private readonly ITaskListService _taskListService;
@@ -22,19 +25,16 @@ namespace AwesomeLists.Controllers
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         }
 
-        [HttpGet("summary/{userId}")]
-        public async Task<ActionResult<TaskListSummary[]>> GetSummaryAsync([Required]string userId)
+        [HttpGet("summary")]
+        public async Task<ActionResult<TaskListSummary[]>> GetSummaryAsync()
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            string userId = User.FindFirst(JwtRegisteredClaimNames.Sub).Value;
 
             List<TaskListSummary> summary = await _taskListService.GetTaskListsSummaryAsync(userId);
 
             if (summary == null || !summary.Any())
             {
-                return NotFound();
+                return Ok(Array.Empty<TaskListSummary>());
             }
 
             return Ok(summary);

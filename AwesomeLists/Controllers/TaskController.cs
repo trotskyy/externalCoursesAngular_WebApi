@@ -34,7 +34,7 @@ namespace AwesomeLists.Controllers
 
             if (tasks == null || !tasks.Any())
             {
-                return NotFound();
+                return Ok(Array.Empty<AppTask>());
             }
 
             TaskDto[] taskDtos = tasks.Select(task => _mapper.MapToDto(task)).ToArray();
