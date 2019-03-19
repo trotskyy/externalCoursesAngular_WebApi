@@ -19,20 +19,19 @@ namespace AwesomeLists.Services.TaskList
             {
                 Id = taskList.Id,
                 Name = taskList.Name,
-                UserId = taskList.UserId,
                 Tasks = taskList.Tasks != null
                     ? taskList.Tasks.Select(task => _taskMapper.MapToDto(task)).ToArray()
                     : null
             };
         }
 
-        public Data.Entities.TaskList MapToEntity(TaskListDto dto)
+        public Data.Entities.TaskList MapToEntity(TaskListDto dto, string userId)
         {
             return new Data.Entities.TaskList
             {
                 Id = dto.Id,
                 Name = dto.Name,
-                UserId = dto.UserId,
+                UserId = userId,
                 Tasks = dto.Tasks != null
                     ? dto.Tasks.Select(task => _taskMapper.MapToEntity(task)).ToArray()
                     : null

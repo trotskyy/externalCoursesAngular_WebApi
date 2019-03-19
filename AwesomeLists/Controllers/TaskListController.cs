@@ -61,15 +61,16 @@ namespace AwesomeLists.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<TaskList>> CreateAsync([FromBody][Required]TaskListDto taskList)
+        public async Task<ActionResult<TaskListDto>> CreateAsync([FromBody][Required]TaskListUpdateDto taskListUpdateDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            TaskList entity = _mapper.MapToEntity(taskList);
-            TaskList addedList =  await _taskListService.AddAsync(entity);
+            string userId = User.FindFirst(JwtRegisteredClaimNames.Sub).Value;
+
+            TaskList addedList =  await _taskListService.AddAsync(new TaskList { Name = taskListUpdateDto.Name, UserId = userId });
             TaskListDto addedListDto = _mapper.MapToDto(addedList);
 
             return CreatedAtAction(nameof(GetByIdAsync), new { id = addedListDto.Id }, addedListDto);
