@@ -1,4 +1,5 @@
 ﻿using AwesomeLists.Services.Task;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace AwesomeLists.Services.TaskList
@@ -10,6 +11,6 @@ namespace AwesomeLists.Services.TaskList
         [Required]
         public string Name { get; set; }
 
-        public TaskDto[] Tasks { get; set; }
+        public TaskDto[] Tasks { get; set; } = Array.Empty<TaskDto>();
     }
 }

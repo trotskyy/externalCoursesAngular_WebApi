@@ -21,7 +21,7 @@ namespace AwesomeLists.Services.TaskList
                 Name = taskList.Name,
                 Tasks = taskList.Tasks != null
                     ? taskList.Tasks.Select(task => _taskMapper.MapToDto(task)).ToArray()
-                    : null
+                    : Array.Empty<TaskDto>()
             };
         }
 
