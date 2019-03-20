@@ -87,8 +87,11 @@ namespace AwesomeLists.Services.Task
                 throw new ArgumentException("not found", nameof(id));
             }
 
-            task.Id = id;
-            _taskRepository.Update(task);
+            entity.Date = task.Date;
+            entity.Description = task.Description;
+            entity.Name = task.Name;
+            entity.Priority = task.Priority;
+            entity.Status = task.Status;
 
             await _unitOfWork.SaveAsync();
         }
