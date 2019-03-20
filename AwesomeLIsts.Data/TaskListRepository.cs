@@ -29,7 +29,10 @@ namespace AwesomeLIsts.Data
 
         public async Task<TaskList> GetByIdAsync(int id)
         {
-            return await _dbContext.TaskLists.FindAsync(id);
+            return await _dbContext.TaskLists
+                .Include(taskList => taskList.Tasks)
+                .Where(taskList => taskList.Id == id)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<List<TaskListSummary>> GetTaskListsSummaryAsync(string userId)
