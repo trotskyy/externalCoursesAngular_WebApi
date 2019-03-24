@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeLists.Data.Abstract;
 
@@ -16,7 +17,7 @@ namespace AwesomeLists.Services.User
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
-        public async System.Threading.Tasks.Task AddAsync(Data.Entities.User user)
+        public async System.Threading.Tasks.Task AddAsync(Data.Entities.User user, CancellationToken token)
         {
             if (user == null)
             {
@@ -31,12 +32,12 @@ namespace AwesomeLists.Services.User
             }
 
             _userRepository.Add(user);
-            await _unitOfWork.SaveAsync();
+            await _unitOfWork.SaveAsync(token);
         }
 
-        public async Task<Data.Entities.User> GetByIdAsync(string id)
+        public async Task<Data.Entities.User> GetByIdAsync(string id, CancellationToken token)
         {
-            return await _userRepository.GetByIdAsync(id);
+            return await _userRepository.GetByIdAsync(id, token);
         }
     }
 }

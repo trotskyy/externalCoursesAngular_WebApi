@@ -4,6 +4,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeLists.Data.Entities;
 using AwesomeLists.Services.Auth;
@@ -38,13 +39,14 @@ namespace AwesomeLists.Controllers
 
         [HttpPost("sign-in")]
         [AllowAnonymous]
-        public async Task<IActionResult> SignInAsync([FromBody] SignInModel signInModel)
+        public async Task<IActionResult> SignInAsync([FromBody] SignInModel signInModel, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
 
             Microsoft.AspNetCore.Identity.SignInResult result =
                 await _signInManager.PasswordSignInAsync(signInModel.Login, signInModel.Password, false, false);
@@ -55,14 +57,14 @@ namespace AwesomeLists.Controllers
             }
 
             AuthUser authUser = _userManager.Users.FirstOrDefault(user => user.UserName == signInModel.Login);
-            User appUser = await _appUserService.GetByIdAsync(authUser.Id);
+            User appUser = await _appUserService.GetByIdAsync(authUser.Id, cancellationToken);
             string token = GenerateJwtTokenString(authUser);
 
             return Ok(new { user = appUser, token });
         }
 
         [HttpPost("sign-up")]
-        public async Task<IActionResult> SignUp([FromBody] SignUpModel signUpModel)
+        public async Task<IActionResult> SignUp([FromBody] SignUpModel signUpModel, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
@@ -73,6 +75,8 @@ namespace AwesomeLists.Controllers
             {
                 UserName = signUpModel.SignInModel.Login
             };
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             var result = await _userManager.CreateAsync(authUser, signUpModel.SignInModel.Password);
 
@@ -91,7 +95,7 @@ namespace AwesomeLists.Controllers
                 LastName = signUpModel.LastName
             };
 
-            await _appUserService.AddAsync(appUser);
+            await _appUserService.AddAsync(appUser, cancellationToken);
 
             string token = GenerateJwtTokenString(authUser);
 

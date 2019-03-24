@@ -11,6 +11,7 @@ using AwesomeLists.Services.Auth;
 using Microsoft.EntityFrameworkCore;
 using AwesomeLists.Configuration;
 using AwesomeLIsts.Data;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AwesomeLists
 {
@@ -65,7 +66,9 @@ namespace AwesomeLists
                     };
                 });
 
-            services.AddMvc();
+            services.AddMvc()
+                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+
             services.AddCors();
 
             services.RegisterDependencies(Configuration);

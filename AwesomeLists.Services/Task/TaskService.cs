@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using AwesomeLists.Data.Abstract;
 using AwesomeLists.Data.Entities;
 using System;
+using System.Threading;
 
 namespace AwesomeLists.Services.Task
 {
@@ -18,7 +19,7 @@ namespace AwesomeLists.Services.Task
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
-        public async Task<AppTask> AddTaskAsync(AppTask task)
+        public async Task<AppTask> AddTaskAsync(AppTask task, CancellationToken token)
         {
             if (task == null)
             {
@@ -26,18 +27,18 @@ namespace AwesomeLists.Services.Task
             }
 
             _taskRepository.AddTask(task);
-            await _unitOfWork.SaveAsync();
+            await _unitOfWork.SaveAsync(token);
             return task;
         }
 
-        public async System.Threading.Tasks.Task DeleteAsync(int id)
+        public async System.Threading.Tasks.Task DeleteAsync(int id, CancellationToken token)
         {
             if (id <= 0)
             {
                 throw new ArgumentException("Id must be >= 0", nameof(id));
             }
 
-            AppTask task = await _taskRepository.FindByIdAsync(id);
+            AppTask task = await _taskRepository.FindByIdAsync(id, token);
 
             if (task == null)
             {
@@ -45,30 +46,30 @@ namespace AwesomeLists.Services.Task
             }
 
             _taskRepository.Delete(task);
-            await _unitOfWork.SaveAsync();
+            await _unitOfWork.SaveAsync(token);
         }
 
-        public async Task<AppTask> GetByIdAsync(int id)
+        public async Task<AppTask> GetByIdAsync(int id, CancellationToken token)
         {
             if (id <= 0)
             {
                 throw new ArgumentException("Id must be more then zero", nameof(id));
             }
 
-            return await _taskRepository.FindByIdAsync(id);
+            return await _taskRepository.FindByIdAsync(id, token);
         }
 
-        public async Task<List<AppTask>> GetByTaskListIdAsync(int id)
+        public async Task<List<AppTask>> GetByTaskListIdAsync(int id, CancellationToken token)
         {
             if (id <= 0)
             {
                 throw new ArgumentException("Id must be more then zero", nameof(id));
             }
 
-            return await _taskRepository.GetAllTasksByTaskListIdAsync(id);
+            return await _taskRepository.GetAllTasksByTaskListIdAsync(id, token);
         }
 
-        public async System.Threading.Tasks.Task UpdateTaskAsync(int id, AppTask task)
+        public async System.Threading.Tasks.Task UpdateTaskAsync(int id, AppTask task, CancellationToken token)
         {
             if (id <= 0)
             {
@@ -80,7 +81,7 @@ namespace AwesomeLists.Services.Task
                 throw new ArgumentNullException(nameof(task));
             }
 
-            AppTask entity = await _taskRepository.FindByIdAsync(id);
+            AppTask entity = await _taskRepository.FindByIdAsync(id, token);
 
             if (entity == null)
             {
@@ -93,7 +94,7 @@ namespace AwesomeLists.Services.Task
             entity.Priority = task.Priority;
             entity.Status = task.Status;
 
-            await _unitOfWork.SaveAsync();
+            await _unitOfWork.SaveAsync(token);
         }
     }
 }

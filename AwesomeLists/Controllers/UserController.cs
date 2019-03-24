@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeLists.Data.Entities;
 using AwesomeLists.Services.User;
@@ -19,7 +20,7 @@ namespace AwesomeLists.Controllers
         }
 
         [HttpGet("current")]
-        public async Task<IActionResult> GetCurrentUserAsync()
+        public async Task<IActionResult> GetCurrentUserAsync(CancellationToken token)
         {
             string currentUserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -28,7 +29,7 @@ namespace AwesomeLists.Controllers
                 return NotFound();
             }
 
-            User currentAppUser = await _appUserService.GetByIdAsync(currentUserId);
+            User currentAppUser = await _appUserService.GetByIdAsync(currentUserId, token);
 
             return Ok(currentAppUser);
         }

@@ -1,7 +1,10 @@
 ﻿using AwesomeLists.Data.Abstract;
 using AwesomeLists.Data.Entities;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace AwesomeLIsts.Data
 {
@@ -19,9 +22,9 @@ namespace AwesomeLIsts.Data
             _dbContext.Add(user);
         }
 
-        public async Task<User> GetByIdAsync(string id)
+        public async Task<User> GetByIdAsync(string id, CancellationToken token)
         {
-            return await _dbContext.Users.FindAsync(id);
+            return await _dbContext.Users.Where(user => user.Id == id).FirstOrDefaultAsync(token);
         }
     }
 }

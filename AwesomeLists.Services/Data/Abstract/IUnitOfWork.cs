@@ -1,9 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace AwesomeLists.Data.Abstract
 {
     public interface IUnitOfWork
     {
-        Task<int> SaveAsync();
+        Task<int> SaveAsync(CancellationToken token);
     }
 }

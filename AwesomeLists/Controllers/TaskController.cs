@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using AwesomeLists.Data.Entities;
 using AwesomeLists.Services.Task;
@@ -23,14 +24,14 @@ namespace AwesomeLists.Controllers
         }
 
         [HttpGet("list-id")]
-        public async Task<ActionResult<TaskDto[]>> GetByListIdAsync([FromQuery]int taskListId)
+        public async Task<ActionResult<TaskDto[]>> GetByListIdAsync([FromQuery]int taskListId, CancellationToken token)
         {
             if (taskListId <= 0)
             {
                 return BadRequest();
             }
 
-            List<AppTask> tasks = await _taskService.GetByTaskListIdAsync(taskListId);
+            List<AppTask> tasks = await _taskService.GetByTaskListIdAsync(taskListId, token);
 
             if (tasks == null || !tasks.Any())
             {
@@ -43,14 +44,14 @@ namespace AwesomeLists.Controllers
 
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<TaskDto>> GetByIdAsync(int id)
+        public async Task<ActionResult<TaskDto>> GetByIdAsync(int id, CancellationToken token)
         {
             if (id <= 0)
             {
                 return BadRequest();
             }
 
-            AppTask task = await _taskService.GetByIdAsync(id);
+            AppTask task = await _taskService.GetByIdAsync(id, token);
 
             if (task == null)
             {
@@ -62,7 +63,7 @@ namespace AwesomeLists.Controllers
         }
 
         [HttpPost()]
-        public async Task<ActionResult<TaskDto>> CreateAsync([FromBody][Required]TaskDto taskDto)
+        public async Task<ActionResult<TaskDto>> CreateAsync([FromBody][Required]TaskDto taskDto, CancellationToken token)
         {
             if (!ModelState.IsValid)
             {
@@ -70,13 +71,13 @@ namespace AwesomeLists.Controllers
             }
 
             var task = _mapper.MapToEntity(taskDto);
-            var created = await _taskService.AddTaskAsync(task);
+            var created = await _taskService.AddTaskAsync(task, token);
 
             return CreatedAtAction(nameof(GetByIdAsync), new { id = created.Id }, _mapper.MapToDto(created));
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateAsync([Range(1, int.MaxValue)]int id, [FromBody]TaskDto taskDto)
+        public async Task<ActionResult> UpdateAsync([Range(1, int.MaxValue)]int id, [FromBody]TaskDto taskDto, CancellationToken token)
         {
             if(!ModelState.IsValid)
             {
@@ -84,20 +85,20 @@ namespace AwesomeLists.Controllers
             }
 
             AppTask task = _mapper.MapToEntity(taskDto);
-            await _taskService.UpdateTaskAsync(id, task);
+            await _taskService.UpdateTaskAsync(id, task, token);
 
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteAsync([Range(1, int.MaxValue)]int id)
+        public async Task<ActionResult> DeleteAsync([Range(1, int.MaxValue)]int id, CancellationToken token)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            await _taskService.DeleteAsync(id);
+            await _taskService.DeleteAsync(id, token);
 
             return NoContent();
         }

@@ -1,5 +1,6 @@
 ﻿using AwesomeLists.Data.Entities;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AwesomeLists.Data.Abstract
@@ -8,9 +9,9 @@ namespace AwesomeLists.Data.Abstract
     {
         void AddTask(AppTask task);
 
-        Task<List<AppTask>> GetAllTasksByTaskListIdAsync(int id);
+        Task<List<AppTask>> GetAllTasksByTaskListIdAsync(int id, CancellationToken token);
 
-        Task<AppTask> FindByIdAsync(int id);
+        Task<AppTask> FindByIdAsync(int id, CancellationToken token);
 
         void Update(AppTask task);
 

@@ -1,5 +1,6 @@
 ﻿using AwesomeLists.Data.Abstract;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AwesomeLIsts.Data
@@ -13,9 +14,9 @@ namespace AwesomeLIsts.Data
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
-        public async Task<int> SaveAsync()
+        public async Task<int> SaveAsync(CancellationToken token)
         {
-            return await _dbContext.SaveChangesAsync();
+            return await _dbContext.SaveChangesAsync(token);
         }
     }
 }

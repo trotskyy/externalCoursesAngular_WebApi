@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AwesomeLIsts.Data
@@ -22,14 +23,14 @@ namespace AwesomeLIsts.Data
             _dbContext.Add(task);
         }
 
-        public async Task<List<AppTask>> GetAllTasksByTaskListIdAsync(int id)
+        public async Task<List<AppTask>> GetAllTasksByTaskListIdAsync(int id, CancellationToken token)
         {
-            return await _dbContext.Tasks.Where(task => task.TaskListId == id).ToListAsync();
+            return await _dbContext.Tasks.Where(task => task.TaskListId == id).ToListAsync(token);
         }
 
-        public async Task<AppTask> FindByIdAsync(int id)
+        public async Task<AppTask> FindByIdAsync(int id, CancellationToken token)
         {
-            return await _dbContext.Tasks.FindAsync(id);
+            return await _dbContext.Tasks.Where(task => task.Id == id).FirstOrDefaultAsync(token);
         }
 
         public void Update(AppTask task)

@@ -1,4 +1,5 @@
 ﻿using AwesomeLists.Data.Entities;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AwesomeLists.Data.Abstract
@@ -7,6 +8,6 @@ namespace AwesomeLists.Data.Abstract
     {
         void Add(User user);
 
-        Task<User> GetByIdAsync(string id);
+        Task<User> GetByIdAsync(string id, CancellationToken token);
     }
 }

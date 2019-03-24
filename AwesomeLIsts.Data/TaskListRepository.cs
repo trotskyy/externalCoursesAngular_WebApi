@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace AwesomeLIsts.Data
@@ -27,15 +28,15 @@ namespace AwesomeLIsts.Data
             _dbContext.Entry(taskList).State = EntityState.Deleted;
         }
 
-        public async Task<TaskList> GetByIdAsync(int id)
+        public async Task<TaskList> GetByIdAsync(int id, CancellationToken token)
         {
             return await _dbContext.TaskLists
                 .Include(taskList => taskList.Tasks)
                 .Where(taskList => taskList.Id == id)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(token);
         }
 
-        public async Task<List<TaskListSummary>> GetTaskListsSummaryAsync(string userId)
+        public async Task<List<TaskListSummary>> GetTaskListsSummaryAsync(string userId, CancellationToken token)
         {
             return await _dbContext.TaskLists
                 .AsNoTracking()
@@ -49,7 +50,7 @@ namespace AwesomeLIsts.Data
                     InProgressCount = taskList.Tasks.Count(task => task.Status == Status.InProgress),
                     DoneCount = taskList.Tasks.Count(task => task.Status == Status.Done),
                 })
-                .ToListAsync();
+                .ToListAsync(token);
         }
     }
 }
