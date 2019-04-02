@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using AwesomeLists.Data.Abstract;
@@ -32,11 +33,36 @@ namespace AwesomeLists.Services.User
             }
 
             _userRepository.Add(user);
+
+            token.ThrowIfCancellationRequested();
             await _unitOfWork.SaveAsync(token);
+        }
+
+        public async System.Threading.Tasks.Task DeleteAsync(Data.Entities.User user, CancellationToken token)
+        {
+            if (user == null)
+            {
+                throw new ArgumentException(nameof(user));
+            }
+
+            _userRepository.Delete(user);
+            await _unitOfWork.SaveAsync(token);
+        }
+
+        public async Task<IReadOnlyCollection<Data.Entities.User>> GetAllAsync(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            return await _userRepository.GetAllAsync(token);
         }
 
         public async Task<Data.Entities.User> GetByIdAsync(string id, CancellationToken token)
         {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                throw new ArgumentNullException(nameof(id));
+            }
+
+            token.ThrowIfCancellationRequested();
             return await _userRepository.GetByIdAsync(id, token);
         }
     }

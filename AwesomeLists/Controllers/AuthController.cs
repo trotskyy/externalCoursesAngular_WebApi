@@ -22,12 +22,14 @@ namespace AwesomeLists.Controllers
     public class AuthController : ControllerBase
     {
         private readonly SignInManager<AuthUser> _signInManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly UserManager<AuthUser> _userManager;
         private readonly IConfiguration _configuration;
         private readonly IUserService _appUserService;
 
         public AuthController(SignInManager<AuthUser> signInManager,
             UserManager<AuthUser> userManager,
+            RoleManager<IdentityRole> roleManager,
             IUserService appUserService,
             IConfiguration configuration)
         {
@@ -35,6 +37,7 @@ namespace AwesomeLists.Controllers
             _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _appUserService = appUserService ?? throw new ArgumentNullException(nameof(appUserService));
+            _roleManager = roleManager ?? throw new ArgumentNullException(nameof(roleManager));
         }
 
         [HttpPost("sign-in")]
@@ -58,13 +61,13 @@ namespace AwesomeLists.Controllers
 
             AuthUser authUser = _userManager.Users.FirstOrDefault(user => user.UserName == signInModel.Login);
             User appUser = await _appUserService.GetByIdAsync(authUser.Id, cancellationToken);
-            string token = GenerateJwtTokenString(authUser);
+            string token = await GenerateJwtTokenString(authUser);
 
             return Ok(new { user = appUser, token });
         }
 
         [HttpPost("sign-up")]
-        public async Task<IActionResult> SignUp([FromBody] SignUpModel signUpModel, CancellationToken cancellationToken)
+        public async Task<IActionResult> SignUpAsync([FromBody] SignUpModel signUpModel, [FromQuery]bool isAdmin, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {
@@ -79,6 +82,12 @@ namespace AwesomeLists.Controllers
             cancellationToken.ThrowIfCancellationRequested();
 
             var result = await _userManager.CreateAsync(authUser, signUpModel.SignInModel.Password);
+
+            if (isAdmin)
+            {
+                await EnsureRole("Admin");
+                await _userManager.AddToRoleAsync(authUser, "Admin");
+            }
 
             if (!result.Succeeded)
             {
@@ -97,12 +106,22 @@ namespace AwesomeLists.Controllers
 
             await _appUserService.AddAsync(appUser, cancellationToken);
 
-            string token = GenerateJwtTokenString(authUser);
+            string token = await GenerateJwtTokenString(authUser);
 
             return Ok(new { user = appUser, token });
         }
 
-        private string GenerateJwtTokenString(AuthUser user)
+        private async Task EnsureRole(string roleName)
+        {
+            bool adminRoleExists = await _roleManager.RoleExistsAsync("Admin");
+            if (!adminRoleExists)
+            {
+                var adminRole = new IdentityRole("Admin");
+                await _roleManager.CreateAsync(adminRole);
+            }
+        }
+
+        private async Task<string> GenerateJwtTokenString(AuthUser user)
         {
             long unixNowSeconds = DateTimeOffset.Now.ToUnixTimeSeconds();
             long expirationTime = unixNowSeconds + 10 * 3600;
@@ -117,6 +136,17 @@ namespace AwesomeLists.Controllers
                 //new Claim(JwtRegisteredClaimNames.Exp, expirationTime.ToString()),
                 // new Claim(ClaimTypes.Role, user.)
             };
+
+            Task<IList<string>> rolesTask = _userManager.GetRolesAsync(user);
+            Task<IList<Claim>> userClaimsTask = _userManager.GetClaimsAsync(user);
+
+            await Task.WhenAll(rolesTask, userClaimsTask);
+
+            foreach (string role in rolesTask.Result)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+            claims.AddRange(userClaimsTask.Result);
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);

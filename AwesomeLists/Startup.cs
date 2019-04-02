@@ -12,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using AwesomeLists.Configuration;
 using AwesomeLIsts.Data;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using AwesomeLists.Services.Filters;
 
 namespace AwesomeLists
 {
@@ -27,6 +29,8 @@ namespace AwesomeLists
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddLogging();
+
             services.AddDbContext<AuthDbContext>(options =>
             {
                 options.UseSqlServer(Configuration.GetConnectionString("AuthDb"));
@@ -66,8 +70,11 @@ namespace AwesomeLists
                     };
                 });
 
-            services.AddMvc()
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddMvc(options => 
+            {
+                options.Filters.Add<LoggerExceptionHandlingFilter>();
+            }
+            ).SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             services.AddCors();
 
